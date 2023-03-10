@@ -1,50 +1,135 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Timeline;
+using System.Runtime.CompilerServices;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.Events;
+using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
 {
-    private Rigidbody _rb;
-    public Transform camHolder;
-    public Transform cam;
+    [Header("Movement")]
+    public Transform orientation;
 
-    private Vector3 _input;
-    private Vector2 _lookDir;
+    public float moveSpeed;
 
-    public float moveSpeed = 10f;
-    public float _dashForce = 10;
+    public float groundDrag;
 
-    public float lookSpeed = 10f;
+    public float jumpForce;
+    public float jumpCooldown;
+    public float airMultiplier;
 
-    void Start()
+    bool readyToJump;
+
+    public float walkSpeed;
+    public float sprintSpeed;
+
+    [Header("Keybinds")]
+    public KeyCode jumpKey = KeyCode.Space;
+
+    [Header("Ground Check")]
+    public float _playerHeight;
+    Vector3 moveDirection;
+
+    Rigidbody rb;
+
+    private void Start()
     {
-        Cursor.visible = false;
-        _rb = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
+        rb.freezeRotation = true;
+
+        readyToJump = true;
     }
 
     private void Update()
     {
-        HandleInputs();
-        Movement();
+        MovePlayer();
+        SpeedControl();
+        GroundCheck();
+
+        // handle drag
+        if (GroundCheck())
+            rb.drag = groundDrag;
+        else
+            rb.drag = 0;
     }
 
-    private void HandleInputs()
+    private void MovePlayer()
     {
-        _input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")); // get input
+        Vector2 input;
+        
+        input.x = Input.GetAxisRaw("Horizontal");
+        input.y = Input.GetAxisRaw("Vertical");
 
-        _lookDir.x += Input.GetAxis("Mouse X") * lookSpeed;
-        _lookDir.y += Input.GetAxis("Mouse Y") * lookSpeed;
-        _lookDir.y = Mathf.Clamp(_lookDir.y, -90, 90);
+        // when to jump
+        if (Input.GetKey(jumpKey) && readyToJump && GroundCheck())
+        {
+            readyToJump = false;
+
+            Jump();
+
+            Invoke(nameof(ResetJump), jumpCooldown);
+        }
+
+        // calculate movement direction
+        moveDirection = orientation.forward * input.x + orientation.right * input.y;
+
+        // on ground movement
+        if (GroundCheck())
+            rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
+
+        // in air movement
+        else if (!GroundCheck())
+            rb.AddForce(moveDirection.normalized * moveSpeed * 10f * airMultiplier, ForceMode.Force);
     }
 
-    private void Movement()
+    private bool IsOnSlope()
     {
-        Vector3 moveDirection = new Vector3(_input.x, 0, _input.z) * moveSpeed * Time.deltaTime;
-        transform.Translate(moveDirection);
+        
+    }
 
-        transform.rotation = Quaternion.Euler(0, _lookDir.x, 0);
-        cam.rotation = Quaternion.Euler(-_lookDir.y, _lookDir.x, 0);
-        cam.position = camHolder.position;
+    private float Get
+
+    /// <summary> 
+    /// returns the surface below the player
+    /// </summary>
+    private RaycastHit GetGroundHit()
+    {
+        Physics.Raycast(transform.position, Vector3.down, out RaycastHit hitInfo);
+        return hitInfo;
+    }
+
+    /// <summary>
+    /// Returns if the player is grounded or not
+    /// </summary>
+    private bool GroundCheck()
+    {
+        return Physics.Raycast(transform.position, Vector3.down, _playerHeight * 0.5f + 0.1f);
+    }
+
+    private void SpeedControl()
+    {
+        Vector3 flatVel = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+
+        // limit velocity if needed
+        if (flatVel.magnitude > moveSpeed)
+        {
+            Vector3 limitedVel = flatVel.normalized * moveSpeed;
+            rb.velocity = new Vector3(limitedVel.x, rb.velocity.y, limitedVel.z);
+        }
+    }
+
+    private void Jump()
+    {
+        // reset y velocity
+        rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
+
+        rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+    }
+    private void ResetJump()
+    {
+        readyToJump = true;
     }
 }

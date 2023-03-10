@@ -43,7 +43,7 @@ public class SpawningFruits : MonoBehaviour
             yield break;
         }
 
-        while (chosenSlot == -1) // is finding a random slot that is empty
+        while (chosenSlot == -1) // is finding a random fruitSlot that is empty
         {
             int trySlot = Random.Range(0, _slots.Length);
 

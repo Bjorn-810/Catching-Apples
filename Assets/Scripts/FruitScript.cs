@@ -91,7 +91,13 @@ public class FruitScript : MonoBehaviour
         }
 
         yield return new WaitForSeconds(_despawnTime); // waits for an ammount of time since the drop has started
-        _appleState = AppleState.Despawning;
+      //  _appleState = AppleState.Despawning;
+
+   //    if (Physics.SphereCast(transform.position, 5f))
+        {
+    //           _rb.velocity = Vector3.zero;
+    //            _rb.useGravity = false;
+        }
     }
 
     private void Despawning()
