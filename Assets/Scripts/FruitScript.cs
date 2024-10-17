@@ -4,17 +4,18 @@ using UnityEngine;
 
 public class FruitScript : MonoBehaviour
 {
-    public enum AppleState { Spawning, WaitingForFall, Falling, Despawning };
+    public enum AppleState { Spawning, WaitingForFall, Falling, Jiggling, Despawning };
 
     [Header("States")]
     public AppleState _appleState;
 
     [Header("Movement")]
     [SerializeField] private float _sideForce;
+    [SerializeField] private float _jiggleDuration;
+    [SerializeField] private float _jiggleRange;
 
     [Header("Sizing")]
     [SerializeField] private float _growSpeed;
-    [SerializeField] private float _shrinkSpeed;
 
     private float _currentSize;
     private float _maxSize;
@@ -24,12 +25,19 @@ public class FruitScript : MonoBehaviour
     [SerializeField] private float _maxFallTime;
     [SerializeField] private float _despawnTime;
 
+    private float elapsedTime;
+    private Vector3 _originalPosition;
+
+    private bool doOnce = false;
+    private bool hasGrown = false;
+
     private Rigidbody _rb;
 
     private void Start()
     {
         _maxSize = transform.localScale.x;
 
+        _originalPosition = transform.position;
         transform.localScale = new Vector3(0, 0, 0); //set fruit size to 0 when it gets instantiated
 
         _rb = GetComponent<Rigidbody>();
@@ -45,11 +53,16 @@ public class FruitScript : MonoBehaviour
         switch (_appleState)
         {
             case AppleState.Spawning:
-                Spawning();
+                if (hasGrown == false)
+                    Spawning();
                 break;
 
             case AppleState.WaitingForFall:
-                StartCoroutine(SelectingWaitTime());
+                // StartCoroutine(SelectingWaitTime());
+                break;
+
+            case AppleState.Jiggling:
+                Jiggling();
                 break;
 
             case AppleState.Falling:
@@ -70,7 +83,40 @@ public class FruitScript : MonoBehaviour
 
         // changes state when reached max size
         if (_currentSize >= _maxSize)
-            _appleState = AppleState.WaitingForFall;
+        {
+            if (doOnce == false)
+            {
+                StartCoroutine(SelectingWaitTime());
+                hasGrown = true;
+                doOnce = true;
+            }
+
+            doOnce = true;
+        }
+
+    }
+
+    private void Jiggling()
+    {
+        if (elapsedTime < _jiggleDuration)
+        {
+            // Calculate random offset
+            Vector3 randomOffset = _originalPosition + Random.insideUnitSphere * _jiggleRange;
+
+            // Lerp towards the random offset
+            float t = elapsedTime / _jiggleDuration;
+            transform.position = Vector3.Lerp(_originalPosition, randomOffset, t);
+
+            // Increase elapsed time
+            elapsedTime += Time.deltaTime;
+        }
+
+        else
+        {
+            // Reset position after jiggle
+            transform.position = _originalPosition;
+            _appleState = AppleState.Falling;
+        }
     }
 
     private IEnumerator SelectingWaitTime()
@@ -78,7 +124,7 @@ public class FruitScript : MonoBehaviour
         float rnd = Random.Range(_minFallTime, _maxFallTime);
         yield return new WaitForSeconds(rnd);
 
-        _appleState = AppleState.Falling; // sets state to falling
+        _appleState = AppleState.Jiggling;
     }
 
     private IEnumerator Falling()
@@ -91,18 +137,12 @@ public class FruitScript : MonoBehaviour
         }
 
         yield return new WaitForSeconds(_despawnTime); // waits for an ammount of time since the drop has started
-      //  _appleState = AppleState.Despawning;
-
-   //    if (Physics.SphereCast(transform.position, 5f))
-        {
-    //           _rb.velocity = Vector3.zero;
-    //            _rb.useGravity = false;
-        }
+        _appleState = AppleState.Despawning;
     }
 
     private void Despawning()
     {
-        _currentSize -= _shrinkSpeed * Time.deltaTime;
+        _currentSize -= _growSpeed * Time.deltaTime;
         transform.localScale = new Vector3(_currentSize, _currentSize, _currentSize);
 
         if (_currentSize <= 0) // destroy gameObject

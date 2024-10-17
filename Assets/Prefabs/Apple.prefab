@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2418517011719204852}
   - component: {fileID: 2418517011719204851}
   - component: {fileID: 2418517011719204850}
+  - component: {fileID: 5936446246498889241}
   m_Layer: 0
   m_Name: Apple
   m_TagString: Fruit
@@ -49,12 +50,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _appleState: 0
-  _sideForce: 0.2
+  _sideForce: 1
+  _jiggleDuration: 1.4
+  _jiggleRange: 0.15
   _growSpeed: 0.65
-  _shrinkSpeed: 0.05
   _minFallTime: 4
   _maxFallTime: 8
-  _despawnTime: 30
+  _despawnTime: 1.75
 --- !u!33 &2418517011719204853
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -134,3 +136,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &5936446246498889241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2418517011719204849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c2eb894aa70592468b2693467e7b5c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  highlight: {fileID: 594909085150773089, guid: c1de26a31ea8fe64595ea1c37d3fc2ea, type: 3}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 128
